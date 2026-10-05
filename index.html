@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -11,14 +9,77 @@
 <link rel="stylesheet"
 href="https://cdn.jsdelivr.net/npm/ol@7.5.2/ol.css">
 
-<link rel="stylesheet"
-href="css/style.css">
+<style>
 
+html,
+body{
+margin:0;
+padding:0;
+height:100%;
+font-family:Segoe UI, Arial, sans-serif;
+}
+
+#sidebar{
+position:absolute;
+left:0;
+top:0;
+bottom:0;
+width:320px;
+background:white;
+padding:15px;
+overflow:auto;
+z-index:1000;
+box-shadow:2px 0 8px rgba(0,0,0,0.2);
+}
+
+#map{
+position:absolute;
+left:320px;
+right:0;
+top:0;
+bottom:0;
+}
+
+button{
+width:100%;
+padding:10px;
+margin-top:10px;
+background:#0078D4;
+border:none;
+color:white;
+border-radius:4px;
+cursor:pointer;
+}
+
+button:hover{
+background:#005fa3;
+}
+
+#dropzone{
+margin-top:10px;
+padding:20px;
+border:2px dashed #999;
+border-radius:6px;
+text-align:center;
+background:#fafafa;
+}
+
+.layer-item{
+margin-bottom:5px;
+}
+
+h2{
+margin-top:0;
+}
+
+</style>
 </head>
 
 <body>
 
-<div id="sidebarr</h2>
+<div id="sidebar">
+
+<h2>🚧 VHW Ondergrond Viewer</h2>
 
 <input
 type="file"
@@ -58,8 +119,255 @@ Geen object geselecteerd
 
 <script src="https://cdn.jsdelivr.net/npm/ol@7.5.2/dist/ol.js"></script>
 
-<script sscript>
+<script>
+
+const map = new ol.Map({
+target: 'map',
+layers: [
+new ol.layer.Tile({
+source: new ol.source.OSM()
+})
+],
+view: new ol.View({
+center: ol.proj.fromLonLat([5.3,52.2]),
+zoom: 8
+})
+});
+
+let loadedLayers = [];
+let layerCounter = 0;
+
+document.getElementById("zoomNL")
+.addEventListener("click",function(){
+
+map.getView().animate({
+center: ol.proj.fromLonLat([5.3,52.2]),
+zoom:8
+});
+
+});
+
+map.on("pointermove",function(evt){
+
+const coords =
+ol.proj.toLonLat(evt.coordinate);
+
+document.getElementById(
+"coords"
+).innerHTML =
+"Lon: " +
+coords[0].toFixed(6) +
+"<br>Lat: " +
+coords[1].toFixed(6);
+
+});
+
+function addGeoJSONLayer(name,text){
+
+const source =
+new ol.source.Vector({
+features:
+new ol.format.GeoJSON()
+.readFeatures(
+text,
+{
+featureProjection:'EPSG:3857'
+}
+)
+});
+
+const vectorLayer =
+new ol.layer.Vector({
+source:source
+});
+
+map.addLayer(vectorLayer);
+
+loadedLayers.push(vectorLayer);
+
+const container =
+document.getElementById("layers");
+
+if(layerCounter===0){
+container.innerHTML="";
+}
+
+const id =
+"layer_" + layerCounter;
+
+const div =
+document.createElement("div");
+
+div.className =
+"layer-item";
+
+div.innerHTML =
+'<input type="checkbox" checked id="'+id+'"> '+
+name;
+
+container.appendChild(div);
+
+document
+.getElementById(id)
+.addEventListener(
+'change',
+function(){
+
+if(this.checked){
+vectorLayer.setVisible(true);
+}
+else{
+vectorLayer.setVisible(false);
+}
+
+}
+);
+
+const extent =
+source.getExtent();
+
+if(extent){
+map.getView().fit(
+extent,
+{
+padding:[50,50,50,50],
+duration:1000
+}
+);
+}
+
+layerCounter++;
+
+}
+
+async function processFile(file){
+
+const ext =
+file.name
+.split(".")
+.pop()
+.toLowerCase();
+
+if(
+ext==="geojson" ||
+ext==="json"
+){
+
+const text =
+await file.text();
+
+addGeoJSONLayer(
+file.name,
+text
+);
+
+}
+
+else{
+
+alert(
+"Alleen GeoJSON wordt momenteel ondersteund."
+);
+
+}
+
+}
+
+document
+.getElementById("upload")
+.addEventListener(
+"change",
+async function(e){
+
+for(const file of e.target.files){
+
+await processFile(file);
+
+}
+
+}
+);
+
+const dropzone =
+document.getElementById(
+"dropzone"
+);
+
+dropzone.addEventListener(
+"dragover",
+function(e){
+e.preventDefault();
+}
+);
+
+dropzone.addEventListener(
+"drop",
+async function(e){
+
+e.preventDefault();
+
+for(const file of e.dataTransfer.files){
+
+await processFile(file);
+
+}
+
+}
+);
+
+map.on(
+"singleclick",
+function(evt){
+
+let found = false;
+
+map.forEachFeatureAtPixel(
+evt.pixel,
+function(feature){
+
+found = true;
+
+const props =
+feature.getProperties();
+
+let html = "";
+
+for(const key in props){
+
+if(key!=="geometry"){
+
+html +=
+"<b>" +
+key +
+"</b>: " +
+props[key] +
+"<br>";
+
+}
+
+}
+
+document.getElementById(
+"featureInfo"
+).innerHTML =
+html || "Geen attributen";
+
+}
+);
+
+if(!found){
+
+document.getElementById(
+"featureInfo"
+).innerHTML =
+"Geen object geselecteerd";
+
+}
+
+}
+);
+
+</script>
 
 </body>
-
 </html>
