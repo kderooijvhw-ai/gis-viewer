@@ -1,153 +1,305 @@
-https://unpkg.com/leaflet@1.9.4/dist/leaflet.jsscript>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<script>
+<title>VHW Ondergrond Viewer</title>
 
-var map = L.map('map').setView([52.1,5.3],8);
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-var brt = L.tileLayer(
-'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-{
-maxZoom:19
-}
-);
+<style>
 
-var luchtfoto = L.tileLayer(
-'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-{
-maxZoom:19
-}
-);
-
-brt.addTo(map);
-
-var projectLayer = L.geoJSON().addTo(map);
-
-function showBRT(){
-    map.removeLayer(luchtfoto);
-    brt.addTo(map);
+html,body{
+height:100%;
+margin:0;
+font-family:Segoe UI, Arial, sans-serif;
 }
 
-function showLuchtfoto(){
-    map.removeLayer(brt);
-    luchtfoto.addTo(map);
+#sidebar{
+position:absolute;
+left:0;
+top:0;
+bottom:0;
+width:320px;
+background:white;
+z-index:1000;
+overflow:auto;
+padding:15px;
+box-shadow:2px 0 8px rgba(0,0,0,0.2);
 }
 
-document
-.getElementById('geojsonFile')
-.addEventListener('change',function(e){
+#map{
+position:absolute;
+left:320px;
+right:0;
+top:0;
+bottom:0;
+}
 
-var file=e.target.files[0];
+button{
+width:100%;
+padding:10px;
+margin-top:8px;
+border:none;
+background:#0078D4;
+color:white;
+border-radius:4px;
+cursor:pointer;
+}
 
-if(!file) return;
+#layers{
+margin-top:15px;
+}
 
-var reader=new FileReader();
+.layer-item{
+margin-bottom:5px;
+}
 
-reader.onload=function(event){
+#dropzone{
+border:2px dashed #999;
+padding:15px;
+text-align:center;
+margin-top:10px;
+border-radius:5px;
+background:#fafafa;
+}
 
-var geojson=
-JSON.parse(event.target.result);
-
-projectLayer.clearLayers();
-
-projectLayer.addData(geojson);
-
-map.fitBounds(
-projectLayer.getBounds()
-);
-
-};
-
-reader.readAsText(file);
-
-});
-
-map.on('mousemove',function(e){
-
-document
-.getElementById('coords')
-.innerHTML=
-
-'Lat: '
-+ e.latlng.lat.toFixed(5)
-
-+
-
-'<br>Lon: '
-
-+ e.latlng.lng.toFixed(5);
-
-});
-
-</script>
+</style>
+</head>
 
 <body>
 
-<div class="header">
-    <h1>VHW Ondergrond Viewer</h1>
+<div id="sidebar">
 
-    <p>
-        <strong>Status:</strong> Online ✅
-    </p>
+<h2>VHW Ondergrond Viewer</h2>
 
-    <h3>Basiskaarten</h3>
+<input type="file"
+id="upload"
+multiple
+accept=".geojson,.json,.kml">
 
-    <button onclick="showBRT()">
-        BRT Kaart
-    </button>
+<button onclick="zoomNL()">
+Zoom Nederland
+</button>
 
-    <button onclick="showLuchtfoto()">
-        Luchtfoto
-    </button>
+<div id="dropzone">
+Sleep GeoJSON of KML hierheen
+</div>
 
-    <hr>
+<h3>Lagen</h3>
 
-    <h3>Projectdata</h3>
+<div id="layers"></div>
 
-    <input
-        type="file"
-        id="geojsonFile"
-        accept=".geojson,.json"
-    >
+<h3>Coördinaten</h3>
 
-    <hr>
+<div id="coords">-</div>
 
-    <h3>Tools</h3>
+<h3>Objectinformatie</h3>
 
-    <button onclick="map.setView([51.6978,5.3037],13)">
-        Naar Den Bosch
-    </button>
+<div id="featureInfo">
+Geen object geselecteerd
+</div>
 
-    <button onclick="map.zoomIn()">
-        Inzoomen
-    </button>
-
-    <button onclick="map.zoomOut()">
-        Uitzoomen
-    </button>
-
-    <hr>
-
-    <small>
-        VHW Engineering GIS Viewer v1
-    </small>
 </div>
 
 <div id="map"></div>
 
-<div id="coords"
-style="
-position:absolute;
-bottom:10px;
-right:10px;
-background:white;
-padding:6px;
-z-index:1000;
-border-radius:6px;
-font-family:Arial;
-">
-Lat: -
-Lon: -
-</div>
-  
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+const map = L.map('map').setView([52.2,5.3],8);
+
+const osm = L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+attribution:'© OpenStreetMap'
+}
+).addTo(map);
+
+const esri = L.tileLayer(
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+{
+attribution:'Esri'
+}
+);
+
+L.control.layers(
+{
+'OpenStreetMap':osm,
+'Luchtfoto':esri
+}
+).addTo(map);
+
+let counter=0;
+const loadedLayers={};
+
+function addLayer(name,geojson){
+
+const layer = L.geoJSON(
+geojson,
+{
+onEachFeature:function(feature,leafletLayer){
+
+leafletLayer.on('click',function(){
+
+let html='';
+
+if(feature.properties){
+
+for(let key in feature.properties){
+
+html +=
+'<b>'+key+'</b>: '+
+feature.properties[key]+
+'<br>';
+
+}
+
+}
+
+document.getElementById(
+'featureInfo'
+).innerHTML=html;
+
+});
+
+}
+}
+).addTo(map);
+
+loadedLayers[name]=layer;
+
+const div=document.createElement('div');
+
+div.className='layer-item';
+
+div.innerHTML=
+'<input type="checkbox" checked id="l'+counter+'"> '+
+name;
+
+document
+.getElementById('layers')
+.appendChild(div);
+
+document
+.getElementById('l'+counter)
+.addEventListener('change',function(){
+
+if(this.checked)
+map.addLayer(layer);
+else
+map.removeLayer(layer);
+
+});
+
+counter++;
+
+if(layer.getBounds().isValid()){
+map.fitBounds(layer.getBounds());
+}
+
+}
+
+async function processFile(file){
+
+const ext =
+file.name
+.split('.')
+.pop()
+.toLowerCase();
+
+if(ext==='geojson' || ext==='json'){
+
+const data =
+JSON.parse(
+await file.text()
+);
+
+addLayer(
+file.name,
+data
+);
+
+}
+
+else if(ext==='kml'){
+
+alert(
+'KML ondersteuning komt in de volgende versie'
+);
+
+}
+
+}
+
+document
+.getElementById('upload')
+.addEventListener(
+'change',
+async function(e){
+
+for(const file of e.target.files){
+
+await processFile(file);
+
+}
+
+}
+);
+
+const dropzone =
+document.getElementById(
+'dropzone'
+);
+
+dropzone.addEventListener(
+'dragover',
+e=>e.preventDefault()
+);
+
+dropzone.addEventListener(
+'drop',
+async function(e){
+
+e.preventDefault();
+
+for(const file of e.dataTransfer.files){
+
+await processFile(file);
+
+}
+
+}
+);
+
+map.on(
+'mousemove',
+function(e){
+
+document.getElementById(
+'coords'
+).innerHTML=
+'Lat: '+
+e.latlng.lat.toFixed(6)+
+'<br>Lon: '+
+e.latlng.lng.toFixed(6);
+
+}
+);
+
+function zoomNL(){
+
+map.setView(
+[52.2,5.3],
+8
+);
+
+}
+
+</script>
+
 </body>
 </html>
