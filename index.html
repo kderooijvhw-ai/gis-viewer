@@ -2,50 +2,55 @@
 <html lang="nl">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VHW Viewer v3</title>
 
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/ol@7.5.2/ol.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet"
-          href="css/style.css">
+<title>VHW Ondergrond Viewer</title>
+
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/ol@7.5.2/ol.css">
+
+<link rel="stylesheet"
+href="css/style.css">
+
 </head>
 
 <body>
 
-<v3</h2>
+<div id="sidebarr</h2>
 
-    <input
-        type="file"
-        id="upload"
-        multiple
-        accept=".geojson,.json">
+<input
+type="file"
+id="upload"
+multiple
+accept=".geojson,.json">
 
-    <button id="zoomNL">
-        Zoom Nederland
-    </button>
+<button id="zoomNL">
+Zoom Nederland
+</button>
 
-    <div id="dropzone">
-        Sleep GeoJSON bestanden hierheen
-    </div>
+<div id="dropzone">
+Sleep GeoJSON bestanden hierheen
+</div>
 
-    <h3>Lagen</h3>
+<h3>Lagen</h3>
 
-    <div id="layers"></div>
+<div id="layers">
+Geen lagen geladen
+</div>
 
-    <h3>Coördinaten</h3>
+<h3>Coördinaten</h3>
 
-    <div id="coords">
-        -
-    </div>
+<div id="coords">
+-
+</div>
 
-    <h3>Objectinformatie</h3>
+<h3>Objectinformatie</h3>
 
-    <div id="featureInfo">
-        Geen object geselecteerd
-    </div>
+<div id="featureInfo">
+Geen object geselecteerd
+</div>
 
 </div>
 
@@ -53,7 +58,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/ol@7.5.2/dist/ol.js"></script>
 
-js/app.jsscript>
+<script sscript>
 
 </body>
+
 </html>
