@@ -1,59 +1,15 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VHW Ondergrond Viewer</title>
-
-https://unpkg.com/leaflet@1.9.4/dist/leaflet.css
-
-<style>
-html,body{
-height:100%;
-margin:0;
-}
-
-#map{
-height:100vh;
-width:100%;
-}
-
-.header{
-position:absolute;
-top:10px;
-left:10px;
-z-index:1000;
-background:white;
-padding:10px;
-border-radius:8px;
-box-shadow:0 2px 8px rgba(0,0,0,0.3);
-font-family:Arial,sans-serif;
-}
-</style>
+<meta charset="utf-8">
+<title>Reset Test</title>
 </head>
-
-<body>
-
-<div class="header">
-<b>VHW Ondergrond Viewer</b><br>
-Prototype v1
-</div>
-
-<div id="map"></div>
-
-https://unpkg.com/leaflet@1.9.4/dist/leaflet.jsscript>
-
-<script>
-const map = L.map('map').setView([52.15,5.30],8);
-
-L.tileLayer(
-'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-{
-attribution:'OpenStreetMap',
-maxZoom:19
-}
-).addTo(map);
-</script>
-
+ 
+<body style="background:#2d3748;color:white;font-family:Arial">
+ 
+<h1>VHW Ondergrond Viewer</h1>
+ 
+<p>Reset geslaagd</p>
+ 
 </body>
 </html>
