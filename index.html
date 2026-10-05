@@ -6,284 +6,40 @@
 
 <title>VHW Ondergrond Viewer</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-;
-    padding:0;
-    height:100%;
-    font-family:Arial,sans-serif;
-}
-
-#sidebar{
-    position:absolute;
-    left:0;
-    top:0;
-    width:320px;
-    height:100%;
-    background:#f7f7f7;
-    border-right:1px solid #ddd;
-    overflow:auto;
-    z-index:1000;
-    padding:15px;
-    box-sizing:border-box;
+<style>
+html,body{
+margin:0;
+padding:0;
+height:100%;
 }
 
 #map{
-    position:absolute;
-    left:320px;
-    right:0;
-    top:0;
-    bottom:0;
+height:100%;
+width:100%;
 }
-
-h1{
-    margin-top:0;
-    color:#003366;
-}
-
-.section{
-    margin-top:20px;
-}
-
-.section h3{
-    color:#005baa;
-    margin-bottom:8px;
-}
-
-button{
-    width:100%;
-    padding:10px;
-    border:none;
-    border-radius:5px;
-    background:#005baa;
-    color:white;
-    cursor:pointer;
-    margin-bottom:5px;
-}
-
-button:hover{
-    background:#004080;
-}
-
-.layer-item{
-    display:block;
-    margin-bottom:6px;
-}
-
-#coords{
-    font-size:14px;
-    padding:8px;
-    background:white;
-    border-radius:6px;
-}
-
-hr{
-    border:none;
-    border-top:1px solid #ddd;
-    margin:15px 0;
-}
-
 </style>
+
 </head>
 
 <body>
 
-<div id="sidebar">
-
-<h1>VHW Ondergrond Viewer</h1>
-
-<p>
-Status: Online ✅
-</p>
-
-<button onclick="zoomNederland()">
-Zoom Nederland
-</button>
-
-<hr>
-
-<div class="section">
-
-<h3>📂 Upload</h3>
-
-<input type="file"
-id="geojsonUpload"
-accept=".geojson,.json">
-
-</div>
-
-<hr>
-
-<div class="section">
-
-<h3>🗺 Basiskaarten</h3>
-
-<label class="layer-item">
-<input type="radio"
-name="basemap"
-checked
-onclick="showBRT()">
-PDOK BRT
-</label>
-
-<label class="layer-item">
-<input type="radio"
-name="basemap"
-onclick="showSat()">
-Luchtfoto
-</label>
-
-</div>
-
-<hr>
-
-<div class="section">
-
-<h3>🌍 Ondergrond</h3>
-
-<label class="layer-item">
-<input type="checkbox">
-BRO Grondwater
-</label>
-
-<label class="layer-item">
-<input type="checkbox">
-AHN Hoogtekaart
-</label>
-
-<label class="layer-item">
-<input type="checkbox">
-Sonderingen
-</label>
-
-</div>
-
-<hr>
-
-<div class="section">
-
-<h3>📍 Coördinaten</h3>
-
-<div id="coords">
-Beweeg met de muis over de kaart
-</div>
-
-</div>
-
-<hr>
-
-<div class="section">
-
-<h3>ℹ Viewer</h3>
-
-VHW Engineering<br>
-GIS Viewer v1.0
-
-</div>
-
-</div>
-
 <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.t.jsscript>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
-var map = L.map('map').setView([52.1,5.3],8);
+var map = L.map('map').etView([52.1,5.3],8);
 
-var brt = L.tileLayer(
+L.tileLayer(
 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 {
-maxZoom:19,
-attribution:'OpenStreetMap'
+maxZoom:19
 }
-);
-
-var sat = L.tileLayer(
-'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-{
-maxZoom:19,
-attribution:'Esri'
-}
-);
-
-brt.addTo(map);
-
-var uploadLayer = L.geoJSON().addTo(map);
-
-function showBRT(){
-    if(map.hasLayer(sat)){
-        map.removeLayer(sat);
-    }
-
-    if(!map.hasLayer(brt)){
-        brt.addTo(map);
-    }
-}
-
-function showSat(){
-
-    if(map.hasLayer(brt)){
-        map.removeLayer(brt);
-    }
-
-    if(!map.hasLayer(sat)){
-        sat.addTo(map);
-    }
-}
-
-function zoomNederland(){
-    map.setView([52.1,5.3],8);
-}
-
-document
-.getElementById('geojsonUpload')
-.addEventListener('change',function(e){
-
-var file=e.target.files[0];
-
-if(!file){
-return;
-}
-
-var reader=new FileReader();
-
-reader.onload=function(event){
-
-var geojson=
-JSON.parse(event.target.result);
-
-uploadLayer.clearLayers();
-
-uploadLayer.addData(geojson);
-
-if(uploadLayer.getBounds().isValid()){
-map.fitBounds(
-uploadLayer.getBounds()
-);
-}
-
-};
-
-reader.readAsText(file);
-
-});
-
-map.on('mousemove',function(e){
-
-document.getElementById('coords').innerHTML=
-
-'Latitude: '
-+
-e.latlng.lat.toFixed(5)
-
-+
-
-'<br>Longitude: '
-+
-e.latlng.lng.toFixed(5);
-
-});
+).addTo(map);
 
 </script>
 
