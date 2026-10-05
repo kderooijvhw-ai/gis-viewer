@@ -3,39 +3,288 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>GIS Viewer VHW</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<style>
-html,body{height:100%;margin:0;font-family:Segoe UI,Arial,sans-serif}
-#sidebar{position:absolute;left:0;top:0;bottom:0;width:320px;background:#fff;z-index:1000;padding:12px;border-right:1px solid #ccc;overflow:auto}
-#map{position:absolute;left:320px;right:0;top:0;bottom:0}
-button{width:100%;padding:10px;margin-top:8px}
-#dropzone{border:2px dashed #aaa;padding:15px;margin-top:10px;text-align:center}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.cssht:100%;
+    margin:0;
+    font-family:Segoe UI,Arial,sans-serif;
+}
+
+#sidebar{
+    position:absolute;
+    left:0;
+    top:0;
+    bottom:0;
+    width:320px;
+    background:white;
+    z-index:1000;
+    padding:15px;
+    border-right:1px solid #ccc;
+    overflow:auto;
+}
+
+#map{
+    position:absolute;
+    left:320px;
+    right:0;
+    top:0;
+    bottom:0;
+}
+
+button{
+    width:100%;
+    padding:10px;
+    margin-top:8px;
+    cursor:pointer;
+}
+
+#dropzone{
+    border:2px dashed #888;
+    border-radius:5px;
+    padding:20px;
+    text-align:center;
+    margin-top:10px;
+}
 </style>
 </head>
+
 <body>
+
 <div id="sidebar">
-<h2>GIS Viewer VHW</h2>
-<input type="file" id="upload" accept=".geojson,.json,.kml">
-<button onclick="zoomNL()">Zoom Nederland</button>
-<div id="dropzone">Sleep GeoJSON of KML hierheen</div>
-<h3>Coördinaten</h3><div id="coords">-</div>
-<h3>Objectinformatie</h3><div id="featureInfo">Geen object geselecteerd</div>
+
+    <h2>GIS Viewer VHW</h2>
+
+    <input type="file" id="upload" accept=".geojson,.json,.kml">
+
+    <button onclick="zoomNL()">
+        Zoom Nederland
+    </button>
+
+    <button onclick="exportGeoJSON()">
+        Export GeoJSON
+    </button>
+
+    <div id="dropzone">
+        Sleep GeoJSON of KML hierheen
+    </div>
+
+    <h3>Coördinaten</h3>
+    <div id="coords">-</div>
+
+    <h3>Objectinformatie</h3>
+    <div id="featureInfo">
+        Geen object geselecteerd
+    </div>
+
 </div>
+
 <div id="map"></div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.min.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geomanaflet-geoman.min.jsscript>
+
 <script>
-const map=L.map('map').setView([52.2,5.3],8);
-const osm=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'OpenStreetMap'}).addTo(map);
-const esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
-L.control.layers({'OpenStreetMap':osm,'Luchtfoto':esri}).addTo(map);
+
+const map = L.map('map').setView([52.2,5.3],8);
+
+const osm = L.tileLayer(
+'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+ attribution:'© OpenStreetMap'
+}
+).addTo(map);
+
+const esri = L.tileLayer(
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+{
+ attribution:'© Esri'
+}
+);
+
+L.control.layers(
+{
+    "OpenStreetMap":osm,
+    "Luchtfoto":esri
+}
+).addTo(map);
+
+const drawnItems = L.featureGroup().addTo(map);
+
+map.pm.addControls({
+    position:'topleft',
+    drawCircle:false,
+    drawCircleMarker:false,
+    drawRectangle:true,
+    drawPolygon:true,
+    drawPolyline:true,
+    drawMarker:true,
+    editMode:true,
+    dragMode:true,
+    cutPolygon:true,
+    removalMode:true
+});
+
 let importedLayer;
-function addGeoJSON(data){if(importedLayer)map.removeLayer(importedLayer); importedLayer=L.geoJSON(data,{onEachFeature:(f,l)=>l.on('click',()=>{let h='';if(f.properties){for(const k in f.properties){h+='<b>'+k+'</b>: '+f.properties[k]+'<br>'}}document.getElementById('featureInfo').innerHTML=h||'Geen attributen';})}).addTo(map); map.fitBounds(importedLayer.getBounds());}
-async function processFile(file){const ext=file.name.split('.').pop().toLowerCase(); if(ext==='geojson'||ext==='json'){addGeoJSON(JSON.parse(await file.text()));} else if(ext==='kml'){const xml=new DOMParser().parseFromString(await file.text(),'text/xml'); addGeoJSON(toGeoJSON.kml(xml));}}
-document.getElementById('upload').addEventListener('change',e=>{if(e.target.files[0])processFile(e.target.files[0]);});
-const dz=document.getElementById('dropzone'); dz.addEventListener('dragover',e=>e.preventDefault()); dz.addEventListener('drop',e=>{e.preventDefault(); if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0]);});
-map.on('mousemove',e=>document.getElementById('coords').innerHTML='Lat: '+e.latlng.lat.toFixed(6)+'<br>Lon: '+e.latlng.lng.toFixed(6));
-function zoomNL(){map.setView([52.2,5.3],8);} 
+
+function addGeoJSON(data){
+
+    if(importedLayer){
+        map.removeLayer(importedLayer);
+    }
+
+    importedLayer = L.geoJSON(data,{
+
+        onEachFeature:function(feature,layer){
+
+            layer.on('click',function(){
+
+                let html='';
+
+                if(feature.properties){
+
+                    for(let key in feature.properties){
+
+                        html +=
+                        '<b>'+key+'</b>: '+
+                        feature.properties[key]+
+                        '<br>';
+
+                    }
+                }
+
+                document.getElementById('featureInfo').innerHTML =
+                html || 'Geen attributen';
+
+            });
+
+        }
+
+    }).addTo(map);
+
+    map.fitBounds(importedLayer.getBounds());
+
+}
+
+async function processFile(file){
+
+    const ext =
+    file.name.split('.').pop().toLowerCase();
+
+    if(ext==='geojson' || ext==='json'){
+
+        addGeoJSON(
+        JSON.parse(await file.text())
+        );
+
+    }
+
+    else if(ext==='kml'){
+
+        const text = await file.text();
+
+        const xml =
+        new DOMParser()
+        .parseFromString(text,'text/xml');
+
+        addGeoJSON(
+        toGeoJSON.kml(xml)
+        );
+
+    }
+
+}
+
+document
+.getElementById('upload')
+.addEventListener('change',e=>{
+
+    if(e.target.files[0]){
+
+        processFile(
+        e.target.files[0]
+        );
+
+    }
+
+});
+
+const dz =
+document.getElementById('dropzone');
+
+dz.addEventListener(
+'dragover',
+e=>e.preventDefault()
+);
+
+dz.addEventListener(
+'drop',
+e=>{
+
+    e.preventDefault();
+
+    if(e.dataTransfer.files[0]){
+
+        processFile(
+        e.dataTransfer.files[0]
+        );
+
+    }
+
+});
+
+map.on('mousemove',function(e){
+
+    document.getElementById('coords').innerHTML =
+    'Lat: ' +
+    e.latlng.lat.toFixed(6) +
+    '<br>Lon: ' +
+    e.latlng.lng.toFixed(6);
+
+});
+
+function zoomNL(){
+
+    map.setView(
+    [52.2,5.3],
+    8
+    );
+
+}
+
+function exportGeoJSON(){
+
+    let data = drawnItems.toGeoJSON();
+
+    let blob = new Blob(
+    [JSON.stringify(data)],
+    {
+        type:'application/json'
+    });
+
+    let url =
+    URL.createObjectURL(blob);
+
+    let a =
+    document.createElement('a');
+
+    a.href = url;
+    a.download = 'export.geojson';
+    a.click();
+
+}
+
+map.on('pm:create',e=>{
+
+    drawnItems.addLayer(
+    e.layer
+    );
+
+});
+
 </script>
-</body></html>
+
+</body>
+</html>
