@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>VHW GIS Viewer</title>
 
@@ -10,65 +10,52 @@
 href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-html, body {
-    height: 100%;
-    margin: 0;
-    font-family: Segoe UI, Arial, sans-serif;
+
+html,body{
+margin:0;
+height:100%;
+font-family:Arial,sans-serif;
 }
 
-#sidebar {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 320px;
-    background: white;
-    padding: 15px;
-    overflow: auto;
-    z-index: 1000;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+#sidebar{
+position:absolute;
+left:0;
+top:0;
+bottom:0;
+width:320px;
+padding:15px;
+background:white;
+box-sizing:border-box;
+overflow:auto;
+border-right:1px solid #ddd;
+z-index:1000;
 }
 
-#map {
-    position: absolute;
-    left: 320px;
-    right: 0;
-    top: 0;
-    bottom: 0;
+#map{
+position:absolute;
+left:320px;
+right:0;
+top:0;
+bottom:0;
 }
 
-button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 8px;
-    background: #0078D4;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+h1{
+color:#005baa;
 }
 
-button:hover {
-    background: #005fa3;
+input{
+width:100%;
+margin-bottom:10px;
 }
 
-.layer-item {
-    margin-top: 5px;
+.info{
+background:#f5f5f5;
+padding:10px;
+border-radius:4px;
+margin-top:10px;
 }
 
-#coords {
-    background: #f3f3f3;
-    padding: 10px;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-#featureInfo {
-    font-size: 12px;
-    word-break: break-word;
-}
 </style>
-
 </head>
 <body>
 
@@ -76,30 +63,20 @@ button:hover {
 
 <h1>🌍 VHW Viewer</h1>
 
-<input
-type="file"
-id="upload"
-multiple
-accept=".geojson,.json,.zip">
+<h3>GeoJSON</h3>
+<input type="file" id="geojsonFile"
+accept=".geojson,.json">
 
-<button onclick="zoomNL()">
-NL Zoom Nederland
-</button>
+<h3>KML</h3>
+<input type="file" id="kmlFile"
+accept=".kml">
 
-<h3>Projectlagen</h3>
+<h3>ZIP Shapefile</h3>
+<input type="file" id="shapeFile"
+accept=".zip">
 
-<div id="layers">
-Geen lagen geladen
-</div>
-
-<h3>Coördinaten</h3>
-
-<div id="coords">-</div>
-
-<h3>Objectinformatie</h3>
-
-<div id="featureInfo">
-Geen object geselecteerd
+<div class="info">
+GIS Viewer voor projectdata
 </div>
 
 </div>
@@ -107,194 +84,139 @@ Geen object geselecteerd
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script src="https:hpjs@latest/dist/shp.min.jsscript>
+<script src="https://unpkg.com/shpjs@latest/dist/shp.min.js"></script>
+<script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togcript>
 
 <script>
 
-const map = L.map('map').setView([52.2, 5.3], 8);
+const map = L.map('map').setView([52.1,5.3],8);
 
-const osm = L.tileLayer(
-'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+L.tileLayer(
+'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
 {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap'
+maxZoom:19,
+attribution:'© OpenStreetMap'
 }
 ).addTo(map);
 
-const esri = L.tileLayer(
-'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-{
-    maxZoom: 19,
-    attribution: 'Esri World Imagery'
-}
+const uploadLayer =
+L.geoJSON().addTo(map);
+
+function zoomToLayer(){
+
+if(uploadLayer.getBounds().isValid()){
+
+map.fitBounds(
+uploadLayer.getBounds()
 );
 
-L.control.layers(
-{
-    "OpenStreetMap": osm,
-    "Satelliet": esri
 }
-).addTo(map);
-
-let layerCounter = 0;
-
-function zoomNL() {
-    map.setView([52.2, 5.3], 8);
-}
-
-function voegLaagToe(naam, data) {
-
-    const laag = L.geoJSON(data, {
-
-        onEachFeature: function(feature, layer) {
-
-            layer.on("click", function() {
-
-                let html = "";
-
-                if (feature.properties) {
-
-                    for (const key in feature.properties) {
-
-                        html +=
-                            "<b>" + key + "</b>: " +
-                            feature.properties[key] +
-                            "<br>";
-
-                    }
-                }
-
-                document.getElementById("featureInfo").innerHTML =
-                    html || "Geen attributen";
-
-            });
-
-        }
-
-    }).addTo(map);
-
-    if (layerCounter === 0) {
-        document.getElementById("layers").innerHTML = "";
-    }
-
-    const id = "laag_" + layerCounter;
-
-    const div = document.createElement("div");
-
-    div.className = "layer-item";
-
-    div.innerHTML =
-        '<input type="checkbox" checked id="' +
-        id +
-        '"> ' +
-        naam;
-
-    document.getElementById("layers")
-        .appendChild(div);
-
-    document.getElementById(id)
-        .addEventListener("change", function() {
-
-            if (this.checked) {
-                map.addLayer(laag);
-            } else {
-                map.removeLayer(laag);
-            }
-
-        });
-
-    if (laag.getBounds().isValid()) {
-        map.fitBounds(laag.getBounds());
-    }
-
-    layerCounter++;
-}
-
-async function verwerkBestand(file) {
-
-    const ext =
-        file.name
-        .split(".")
-        .pop()
-        .toLowerCase();
-
-    try {
-
-        if (ext === "geojson" || ext === "json") {
-
-            const data =
-                JSON.parse(await file.text());
-
-            voegLaagToe(
-                file.name,
-                data
-            );
-
-        }
-
-        else if (ext === "zip") {
-
-            const buffer =
-                await file.arrayBuffer();
-
-            const geojson =
-                await shp(buffer);
-
-            voegLaagToe(
-                file.name,
-                geojson
-            );
-
-        }
-
-        else {
-
-            alert(
-                "Ondersteund: GeoJSON en ZIP Shapefile"
-            );
-
-        }
-
-    }
-    catch (err) {
-
-        console.error(err);
-
-        alert(
-            "Bestand kon niet worden geladen."
-        );
-
-    }
 
 }
 
-document.getElementById("upload")
-.addEventListener(
-    "change",
-    async function(e) {
+/* GEOJSON */
 
-        for (const file of e.target.files) {
+document
+.getElementById("geojsonFile")
+.addEventListener("change",function(e){
 
-            await verwerkBestand(file);
+const file=e.target.files[0];
 
-        }
+if(!file) return;
 
-    }
+const reader=new FileReader();
+
+reader.onload=function(evt){
+
+const geojson=
+JSON.parse(evt.target.result);
+
+uploadLayer.clearLayers();
+
+uploadLayer.addData(geojson);
+
+zoomToLayer();
+
+};
+
+reader.readAsText(file);
+
+});
+
+/* KML */
+
+document
+.getElementById("kmlFile")
+.addEventListener("change",function(e){
+
+const file=e.target.files[0];
+
+if(!file) return;
+
+const reader=new FileReader();
+
+reader.onload=function(evt){
+
+const parser =
+new DOMParser();
+
+const kml =
+parser.parseFromString(
+evt.target.result,
+"text/xml"
 );
 
-map.on(
-    "mousemove",
-    function(e) {
+const geojson =
+toGeoJSON.kml(kml);
 
-        document.getElementById("coords").innerHTML =
-            "Lat: " +
-            e.latlng.lat.toFixed(6) +
-            "<br>Lon: " +
-            e.latlng.lng.toFixed(6);
+uploadLayer.clearLayers();
 
-    }
+uploadLayer.addData(
+geojson
 );
+
+zoomToLayer();
+
+};
+
+reader.readAsText(file);
+
+});
+
+/* SHAPEFILE ZIP */
+
+document
+.getElementById("shapeFile")
+.addEventListener("change",function(e){
+
+const file=e.target.files[0];
+
+if(!file) return;
+
+const reader =
+new FileReader();
+
+reader.onload=function(evt){
+
+shp(evt.target.result)
+
+.then(function(geojson){
+
+uploadLayer.clearLayers();
+
+uploadLayer.addData(
+geojson
+);
+
+zoomToLayer();
+
+});
+
+};
+
+reader.readAsArrayBuffer(file);
+
+});
 
 </script>
 
