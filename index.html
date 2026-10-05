@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>VHW Ondergrond Viewer</title>
+<title>VHW Ondergrond Viewer v2</title>
 
 <link rel="stylesheet"
 href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -14,7 +14,7 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 html,body{
 height:100%;
 margin:0;
-font-family:Segoe UI, Arial, sans-serif;
+font-family:Segoe UI,Arial,sans-serif;
 }
 
 #sidebar{
@@ -24,10 +24,10 @@ top:0;
 bottom:0;
 width:320px;
 background:white;
-z-index:1000;
 overflow:auto;
 padding:15px;
-box-shadow:2px 0 8px rgba(0,0,0,0.2);
+z-index:1000;
+box-shadow:2px 0 10px rgba(0,0,0,.2);
 }
 
 #map{
@@ -42,28 +42,40 @@ button{
 width:100%;
 padding:10px;
 margin-top:8px;
-border:none;
-background:#0078D4;
+background:#0078d4;
 color:white;
+border:none;
 border-radius:4px;
 cursor:pointer;
 }
 
-#layers{
-margin-top:15px;
-}
-
-.layer-item{
-margin-bottom:5px;
+button:hover{
+background:#106ebe;
 }
 
 #dropzone{
-border:2px dashed #999;
-padding:15px;
-text-align:center;
 margin-top:10px;
-border-radius:5px;
+padding:20px;
+border:2px dashed #999;
+text-align:center;
+border-radius:6px;
 background:#fafafa;
+}
+
+.layer-item{
+margin-bottom:6px;
+}
+
+.info-box{
+padding:10px;
+background:#f5f5f5;
+border-radius:4px;
+margin-top:10px;
+font-size:14px;
+}
+
+h2{
+margin-top:0;
 }
 
 </style>
@@ -73,39 +85,30 @@ background:#fafafa;
 
 <div id="sidebar">
 
-<h2>VHW Ondergrond Viewer</h2>
+<h2>🛰️ VHW Viewer v2</h2>
 
-<input type="file"
+<input
+type="file"
 id="upload"
 multiple
-accept=".geojson,.json,.kml">
+accept=".geojson,.json">
 
 <button onclick="zoomNL()">
 Zoom Nederland
 </button>
 
 <div id="dropzone">
-Sleep GeoJSON of KML hierheen
+Sleep GeoJSON bestanden hierheen
 </div>
 
-<h2>Lagen</h2>
- 
-<div class="layer-group">
- 
-<h3>🗺 Basiskaarten</h3>
- 
-<label>
-<input type="radio" name="basemap" checked
-
+<h3>Lagen</h3>
 <div id="layers"></div>
 
 <h3>Coördinaten</h3>
-
-<div id="coords">-</div>
+<div id="coords" class="info-box">-</div>
 
 <h3>Objectinformatie</h3>
-
-<div id="featureInfo">
+<div id="featureInfo" class="info-box">
 Geen object geselecteerd
 </div>
 
@@ -124,33 +127,48 @@ const osm = L.tileLayer(
 {
 attribution:'© OpenStreetMap'
 }
-).addTo(map);
+);
 
 const esri = L.tileLayer(
 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
 {
-attribution:'Esri'
+attribution:'Esri World Imagery'
 }
 );
 
+const pdok = L.tileLayer(
+'https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/grijs/EPSG:3857/{z}/{x}/{y}.png',
+{
+attribution:'PDOK'
+}
+);
+
+osm.addTo(map);
+
 L.control.layers(
 {
-'OpenStreetMap':osm,
-'Luchtfoto':esri
-}
+'OpenStreetMap': osm,
+'Luchtfoto': esri,
+'PDOK BRT': pdok
+},
+{}
 ).addTo(map);
 
-let counter=0;
-const loadedLayers={};
+let layerCounter = 0;
+const loadedLayers = {};
 
-function addLayer(name,geojson){
+function addLayer(name,data){
 
-const layer = L.geoJSON(
-geojson,
-{
-onEachFeature:function(feature,leafletLayer){
+const layer = L.geoJSON(data,{
 
-leafletLayer.on('click',function(){
+style:{
+color:'#ff0000',
+weight:3
+},
+
+onEachFeature:function(feature,l){
+
+l.on('click',function(){
 
 let html='';
 
@@ -167,6 +185,10 @@ feature.properties[key]+
 
 }
 
+if(html===''){
+html='Geen attributen';
+}
+
 document.getElementById(
 'featureInfo'
 ).innerHTML=html;
@@ -174,35 +196,38 @@ document.getElementById(
 });
 
 }
-}
-).addTo(map);
+
+}).addTo(map);
 
 loadedLayers[name]=layer;
+
+const id='layer_'+layerCounter++;
 
 const div=document.createElement('div');
 
 div.className='layer-item';
 
 div.innerHTML=
-'<input type="checkbox" checked id="l'+counter+'"> '+
-name;
+`<input type="checkbox"
+id="${id}"
+checked>
+${name}`;
 
 document
 .getElementById('layers')
 .appendChild(div);
 
 document
-.getElementById('l'+counter)
+.getElementById(id)
 .addEventListener('change',function(){
 
-if(this.checked)
+if(this.checked){
 map.addLayer(layer);
-else
+}else{
 map.removeLayer(layer);
+}
 
 });
-
-counter++;
 
 if(layer.getBounds().isValid()){
 map.fitBounds(layer.getBounds());
@@ -218,7 +243,12 @@ file.name
 .pop()
 .toLowerCase();
 
-if(ext==='geojson' || ext==='json'){
+if(
+ext==='geojson' ||
+ext==='json'
+){
+
+try{
 
 const data =
 JSON.parse(
@@ -231,12 +261,13 @@ data
 );
 
 }
-
-else if(ext==='kml'){
+catch(err){
 
 alert(
-'KML ondersteuning komt in de volgende versie'
+'GeoJSON ongeldig'
 );
+
+}
 
 }
 
@@ -264,7 +295,17 @@ document.getElementById(
 
 dropzone.addEventListener(
 'dragover',
-e=>e.preventDefault()
+e=>{
+e.preventDefault();
+dropzone.style.background='#e8f3ff';
+}
+);
+
+dropzone.addEventListener(
+'dragleave',
+()=>{
+dropzone.style.background='#fafafa';
+}
 );
 
 dropzone.addEventListener(
@@ -272,6 +313,8 @@ dropzone.addEventListener(
 async function(e){
 
 e.preventDefault();
+
+dropzone.style.background='#fafafa';
 
 for(const file of e.dataTransfer.files){
 
@@ -289,9 +332,12 @@ function(e){
 document.getElementById(
 'coords'
 ).innerHTML=
+
 'Lat: '+
 e.latlng.lat.toFixed(6)+
-'<br>Lon: '+
+'<br>'+
+
+'Lon: '+
 e.latlng.lng.toFixed(6);
 
 }
