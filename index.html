@@ -1,20 +1,18 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VHW Ondergrond Viewer</title>
 
 <link rel="stylesheet"
 href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-
 html,body{
 height:100%;
 margin:0;
-font-family:Segoe UI,Arial,sans-serif;
+font-family:Arial,sans-serif;
 }
 
 #sidebar{
@@ -26,8 +24,8 @@ width:300px;
 background:white;
 z-index:1000;
 padding:15px;
-overflow:auto;
 box-shadow:2px 0 8px rgba(0,0,0,0.2);
+overflow:auto;
 }
 
 #map{
@@ -38,31 +36,36 @@ top:0;
 bottom:0;
 }
 
-h2{
-margin-top:0;
+button{
+width:100%;
+padding:10px;
+margin-top:10px;
 }
-
 </style>
 </head>
 
 <body>
 
 <div id="sidebar">
-
 <h2>VHW Ondergrond Viewer</h2>
 
-<p><b>Status:</b> MVP v1</p>
+<p><b>Status:</b> Werkende kaart ✅</p>
 
-<p>Volgende lagen:</p>
+<button onclick="zoomNL()">
+Zoom Nederland
+</button>
+
+<hr>
+
+<h3>Roadmap</h3>
 
 <ul>
-<li>PDOK BRT</li>
-<li>PDOK Luchtfoto</li>
-<li>AHN Maaiveld</li>
-<li>BRO Grondwater</li>
+<li>GeoJSON upload</li>
+<li>ZIP Shapefile upload</li>
+<li>PDOK luchtfoto</li>
+<li>AHN maaiveld</li>
+<li>BRO grondwater</li>
 <li>Sonderingen</li>
-<li>GeoJSON Upload</li>
-<li>Shapefile Upload</li>
 </ul>
 
 </div>
@@ -80,23 +83,11 @@ const osm = L.tileLayer(
 {
 attribution:'© OpenStreetMap'
 }
-);
-
-const luchtfoto = L.tileLayer(
-'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-{
-attribution:'Esri'
-}
-);
-
-osm.addTo(map);
-
-L.control.layers(
-{
-'OpenStreetMap': osm,
-'Luchtfoto': luchtfoto
-}
 ).addTo(map);
+
+function zoomNL(){
+map.setView([52.2,5.3],8);
+}
 
 </script>
 
