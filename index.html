@@ -1,42 +1,103 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GIS Viewer VHW</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>VHW Ondergrond Viewer</title>
 
 <link rel="stylesheet"
 href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
+
+html,body{
+height:100%;
+margin:0;
+font-family:Segoe UI,Arial,sans-serif;
 }
-#map {
-    height: 100vh;
-    width: 100%;
+
+#sidebar{
+position:absolute;
+left:0;
+top:0;
+bottom:0;
+width:300px;
+background:white;
+z-index:1000;
+padding:15px;
+overflow:auto;
+box-shadow:2px 0 8px rgba(0,0,0,0.2);
 }
+
+#map{
+position:absolute;
+left:300px;
+right:0;
+top:0;
+bottom:0;
+}
+
+h2{
+margin-top:0;
+}
+
 </style>
 </head>
 
 <body>
+
+<div id="sidebar">
+
+<h2>VHW Ondergrond Viewer</h2>
+
+<p><b>Status:</b> MVP v1</p>
+
+<p>Volgende lagen:</p>
+
+<ul>
+<li>PDOK BRT</li>
+<li>PDOK Luchtfoto</li>
+<li>AHN Maaiveld</li>
+<li>BRO Grondwater</li>
+<li>Sonderingen</li>
+<li>GeoJSON Upload</li>
+<li>Shapefile Upload</li>
+</ul>
+
+</div>
 
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-var map = L.map('map').setView([52.1, 5.3], 8);
 
-L.tileLayer(
-    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {
-        attribution: '&copy; OpenStreetMap',
-        maxZoom: 19
-    }
+const map = L.map('map').setView([52.2,5.3],8);
+
+const osm = L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+attribution:'© OpenStreetMap'
+}
+);
+
+const luchtfoto = L.tileLayer(
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+{
+attribution:'Esri'
+}
+);
+
+osm.addTo(map);
+
+L.control.layers(
+{
+'OpenStreetMap': osm,
+'Luchtfoto': luchtfoto
+}
 ).addTo(map);
+
 </script>
 
 </body>
