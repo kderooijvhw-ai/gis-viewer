@@ -6,23 +6,132 @@
 
 <title>VHW Ondergrond Viewer</title>
 
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
+
 html,body{
-margin:0;
 height:100%;
+margin:0;
+font-family:Arial,sans-serif;
+}
+
+#sidebar{
+position:absolute;
+left:0;
+top:0;
+bottom:0;
+width:300px;
+background:white;
+z-index:1000;
+padding:15px;
+overflow:auto;
+box-shadow:0 0 10px rgba(0,0,0,0.2);
 }
 
 #map{
-height:100vh;
-width:100%;
+position:absolute;
+top:0;
+left:300px;
+right:0;
+bottom:0;
 }
-</style>
 
+h1{
+margin-top:0;
+color:#005baa;
+}
+
+button{
+width:100%;
+padding:10px;
+margin-bottom:8px;
+border:none;
+background:#005baa;
+color:white;
+cursor:pointer;
+border-radius:4px;
+}
+
+button:hover{
+background:#003f7d;
+}
+
+.section{
+margin-top:20px;
+}
+
+label{
+display:block;
+margin-bottom:6px;
+}
+
+#coords{
+font-size:14px;
+padding:8px;
+background:#f0f0f0;
+border-radius:4px;
+}
+
+</style>
 </head>
+
 <body>
+
+<div id="sidebar">
+
+<h1>🌍 VHW Viewer</h1>
+
+<p>
+Ondergrond & Projectdata
+</p>
+
+<button onclick="zoomNederland()">
+🇳🇱 Zoom Nederland
+</button>
+
+<div class="section">
+
+<h3>📂 GeoJSON Upload</h3>
+
+<input type="file"
+id="geojsonFile"
+accept=".geojson,.json">
+
+</div>
+
+<div class="section">
+
+<h3>🗺 Basiskaart</h3>
+
+<label>
+<input type="radio"
+name="basemap"
+checked
+onclick="showOSM()">
+OpenStreetMap
+</label>
+
+<label>
+<input type="radio"
+name="basemap"
+onclick="showSat()">
+Satelliet
+</label>
+
+</div>
+
+<div class="section">
+
+<h3>📍 Coördinaten</h3>
+
+<div id="coords">
+Beweeg over de kaart
+</div>
+
+</div>
+
+</div>
 
 <div id="map"></div>
 
@@ -30,17 +139,105 @@ width:100%;
 
 <script>
 
-const map = L.map('map').setView([52.1,5.3],8);
+const map= L.map('map').setView([52.1,5.3],8);
 
-L.tileLayer(
+const osm = L.tileLayer(
 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 {
 maxZoom:19,
 attribution:'© OpenStreetMap'
 }
-).addTo(map);
+);
+
+const sat = L.tileLayer(
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+{
+maxZoom:19,
+attribution:'© Esri'
+}
+);
+
+osm.addTo(map);
+
+const uploadLayer = L.geoJSON().addTo(map);
+
+function showOSM(){
+
+if(map.hasLayer(sat)){
+map.removeLayer(sat);
+}
+
+osm.addTo(map);
+
+}
+
+function showSat(){
+
+if(map.hasLayer(osm)){
+map.removeLayer(osm);
+}
+
+sat.addTo(map);
+
+}
+
+function zoomNederland(){
+
+map.setView([52.1,5.3],8);
+
+}
+
+document
+.getElementById("geojsonFile")
+.addEventListener("change",function(e){
+
+const file=e.target.files[0];
+
+if(!file) return;
+
+const reader=new FileReader();
+
+reader.onload=function(event){
+
+const geojson=
+JSON.parse(event.target.result);
+
+uploadLayer.clearLayers();
+
+uploadLayer.addData(geojson);
+
+if(uploadLayer.getBounds().isValid()){
+
+map.fitBounds(
+uploadLayer.getBounds()
+);
+
+}
+
+};
+
+reader.readAsText(file);
+
+});
+
+map.on("mousemove",function(e){
+
+document.getElementById("coords").innerHTML=
+
+"Lat: "
+
++ e.latlng.lat.toFixed(5)
+
++
+
+"<br>Lon: "
+
++ e.latlng.lng.toFixed(5);
+
+});
 
 </script>
 
 </body>
 </html>
+``
