@@ -1,99 +1,27 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>VHW Ondergrond Viewer v2</title>
+<title>VHW Viewer v3</title>
 
 <link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css">
 
-<style>
+<link rel="stylesheet"
+href="css/style.css">
 
-html,body{
-height:100%;
-margin:0;
-font-family:Segoe UI,Arial,sans-serif;
-}
-
-#sidebar{
-position:absolute;
-left:0;
-top:0;
-bottom:0;
-width:320px;
-background:white;
-overflow:auto;
-padding:15px;
-z-index:1000;
-box-shadow:2px 0 10px rgba(0,0,0,.2);
-}
-
-#map{
-position:absolute;
-left:320px;
-right:0;
-top:0;
-bottom:0;
-}
-
-button{
-width:100%;
-padding:10px;
-margin-top:8px;
-background:#0078d4;
-color:white;
-border:none;
-border-radius:4px;
-cursor:pointer;
-}
-
-button:hover{
-background:#106ebe;
-}
-
-#dropzone{
-margin-top:10px;
-padding:20px;
-border:2px dashed #999;
-text-align:center;
-border-radius:6px;
-background:#fafafa;
-}
-
-.layer-item{
-margin-bottom:6px;
-}
-
-.info-box{
-padding:10px;
-background:#f5f5f5;
-border-radius:4px;
-margin-top:10px;
-font-size:14px;
-}
-
-h2{
-margin-top:0;
-}
-
-</style>
 </head>
 
 <body>
-
-<div id="sidebar">
-
-<h2>🛰️ VHW Viewer v2</h2>
-
-<input
-type="file"
+ile"
 id="upload"
 multiple
 accept=".geojson,.json">
 
-<button onclick="zoomNL()">
+<button id="zoomNL">
 Zoom Nederland
 </button>
 
@@ -102,13 +30,18 @@ Sleep GeoJSON bestanden hierheen
 </div>
 
 <h3>Lagen</h3>
+
 <div id="layers"></div>
 
 <h3>Coördinaten</h3>
-<div id="coords" class="info-box">-</div>
+
+<div id="coords">
+-
+</div>
 
 <h3>Objectinformatie</h3>
-<div id="featureInfo" class="info-box">
+
+<div id="featureInfo">
 Geen object geselecteerd
 </div>
 
@@ -116,243 +49,9 @@ Geen object geselecteerd
 
 <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivrist/ol.jsscript>
 
-<script>
-
-const map = L.map('map').setView([52.2,5.3],8);
-
-const osm = L.tileLayer(
-'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-{
-attribution:'© OpenStreetMap'
-}
-);
-
-const esri = L.tileLayer(
-'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-{
-attribution:'Esri World Imagery'
-}
-);
-
-const pdok = L.tileLayer(
-'https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/grijs/EPSG:3857/{z}/{x}/{y}.png',
-{
-attribution:'PDOK'
-}
-);
-
-osm.addTo(map);
-
-L.control.layers(
-{
-'OpenStreetMap': osm,
-'Luchtfoto': esri,
-'PDOK BRT': pdok
-},
-{}
-).addTo(map);
-
-let layerCounter = 0;
-const loadedLayers = {};
-
-function addLayer(name,data){
-
-const layer = L.geoJSON(data,{
-
-style:{
-color:'#ff0000',
-weight:3
-},
-
-onEachFeature:function(feature,l){
-
-l.on('click',function(){
-
-let html='';
-
-if(feature.properties){
-
-for(let key in feature.properties){
-
-html +=
-'<b>'+key+'</b>: '+
-feature.properties[key]+
-'<br>';
-
-}
-
-}
-
-if(html===''){
-html='Geen attributen';
-}
-
-document.getElementById(
-'featureInfo'
-).innerHTML=html;
-
-});
-
-}
-
-}).addTo(map);
-
-loadedLayers[name]=layer;
-
-const id='layer_'+layerCounter++;
-
-const div=document.createElement('div');
-
-div.className='layer-item';
-
-div.innerHTML=
-`<input type="checkbox"
-id="${id}"
-checked>
-${name}`;
-
-document
-.getElementById('layers')
-.appendChild(div);
-
-document
-.getElementById(id)
-.addEventListener('change',function(){
-
-if(this.checked){
-map.addLayer(layer);
-}else{
-map.removeLayer(layer);
-}
-
-});
-
-if(layer.getBounds().isValid()){
-map.fitBounds(layer.getBounds());
-}
-
-}
-
-async function processFile(file){
-
-const ext =
-file.name
-.split('.')
-.pop()
-.toLowerCase();
-
-if(
-ext==='geojson' ||
-ext==='json'
-){
-
-try{
-
-const data =
-JSON.parse(
-await file.text()
-);
-
-addLayer(
-file.name,
-data
-);
-
-}
-catch(err){
-
-alert(
-'GeoJSON ongeldig'
-);
-
-}
-
-}
-
-}
-
-document
-.getElementById('upload')
-.addEventListener(
-'change',
-async function(e){
-
-for(const file of e.target.files){
-
-await processFile(file);
-
-}
-
-}
-);
-
-const dropzone =
-document.getElementById(
-'dropzone'
-);
-
-dropzone.addEventListener(
-'dragover',
-e=>{
-e.preventDefault();
-dropzone.style.background='#e8f3ff';
-}
-);
-
-dropzone.addEventListener(
-'dragleave',
-()=>{
-dropzone.style.background='#fafafa';
-}
-);
-
-dropzone.addEventListener(
-'drop',
-async function(e){
-
-e.preventDefault();
-
-dropzone.style.background='#fafafa';
-
-for(const file of e.dataTransfer.files){
-
-await processFile(file);
-
-}
-
-}
-);
-
-map.on(
-'mousemove',
-function(e){
-
-document.getElementById(
-'coords'
-).innerHTML=
-
-'Lat: '+
-e.latlng.lat.toFixed(6)+
-'<br>'+
-
-'Lon: '+
-e.latlng.lng.toFixed(6);
-
-}
-);
-
-function zoomNL(){
-
-map.setView(
-[52.2,5.3],
-8
-);
-
-}
-
-</script>
+<script srcript>
 
 </body>
 </html>
