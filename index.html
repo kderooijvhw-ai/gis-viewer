@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>VHW Ondergrond Viewer</title>
+<title>VHW GIS Viewer</title>
 
 <link rel="stylesheet"
 href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -14,7 +14,7 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 html,body{
 height:100%;
 margin:0;
-font-family:Arial,sans-serif;
+font-family:Segoe UI,Arial,sans-serif;
 }
 
 #sidebar{
@@ -23,11 +23,11 @@ left:0;
 top:0;
 bottom:0;
 width:320px;
-background:#fff;
-padding:15px;
-overflow:auto;
+background:white;
 z-index:1000;
-box-shadow:0 0 10px rgba(0,0,0,.2);
+overflow:auto;
+padding:15px;
+box-shadow:2px 0 8px rgba(0,0,0,0.2);
 }
 
 #map{
@@ -41,20 +41,36 @@ bottom:0;
 button{
 width:100%;
 padding:10px;
-margin-bottom:5px;
-background:#005baa;
+margin-top:8px;
+background:#0078D4;
 color:white;
 border:none;
 border-radius:4px;
 cursor:pointer;
 }
 
-input{
-width:100%;
-margin-bottom:10px;
+button:hover{
+background:#005fa3;
+}
+
+.layer-item{
+margin-top:5px;
+}
+
+#coords{
+padding:10px;
+background:#f3f3f3;
+font-size:12px;
+border-radius:4px;
+}
+
+#featureInfo{
+font-size:12px;
+word-break:break-word;
 }
 
 </style>
+
 </head>
 <body>
 
@@ -62,162 +78,245 @@ margin-bottom:10px;
 
 <h1>🌍 VHW Viewer</h1>
 
-<h3>GeoJSON Upload</h3>
-<input type="file" id="geojsonFile" accept=".geojson,.json">
+<input
+type="file"
+id="upload"
+multiple
+accept=".geojson,.json,.zip">
 
-<h3>KML Upload</h3>
-<input type="file" id="kmlFile" accept=".kml">
+<button onclick="zoomNL()">
+NL Zoom Nederland
+</button>
 
-<h3>ZIP Shapefile Upload</h3>
-<input type="file" id="shapeFile" accept=".zip">
+<h2>Projectlagen</h2>
+
+<div id="layers">
+Geen lagen geladen
+</div>
+
+<h2>Coördinaten</h2>
+
+<div id="coords">
+-
+</div>
+
+<h2>Objectinformatie</h2>
+
+<div id="featureInfo">
+Geen object geselecteerd
+</div>
 
 </div>
 
 <div id="map"></div>
 
+<!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script src="https://unpkg.com/shpjs@latest/dist/shp.min.js"></script>
+<!-- Shapefile ZIP ondersteuning -->
+https://unpkg.com/shpjs@latest/dist/shp.min.jsscript>
 
-<script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.
 <script>
 
-const map = L.map('map').setView([52.1,5.3],8);
+const map = L.map('map').setView([52.2,5.3],8);
 
-L.tileLayer(
-'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+const osm = L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 {
 maxZoom:19,
 attribution:'© OpenStreetMap'
 }
 ).addTo(map);
 
-const uploadLayer = L.geoJSON(null,{
+const esri = L.tileLayer(
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+{
+maxZoom:19,
+attribution:'Esri World Imagery'
+}
+);
+
+L.control.layers(
+{
+'OpenStreetMap': osm,
+'Satelliet': esri
+}
+).addTo(map);
+
+let layerCounter = 0;
+
+function zoomNL(){
+map.setView([52.2,5.3],8);
+}
+
+function voegLaagToe(naam,data){
+
+const laag = L.geoJSON(data,{
+
 onEachFeature:function(feature,layer){
+
+layer.on('click',function(){
+
+let html='';
 
 if(feature.properties){
 
-let html="";
-
-for(const key in feature.properties){
+for(let key in feature.properties){
 
 html +=
-"<b>"+key+"</b>: "
-+
-feature.properties[key]
-+
-"<br>";
-
-}
-
-layer.bindPopup(html);
+'<b>' + key + '</b>: ' +
+feature.properties[key] +
+'<br>';
 
 }
 
 }
+
+document.getElementById(
+'featureInfo'
+).innerHTML =
+html || 'Geen attributen';
+
+});
+
+}
+
 }).addTo(map);
 
-function zoomToLayer(){
+if(layerCounter===0){
+document.getElementById('layers').innerHTML='';
+}
 
-if(uploadLayer.getBounds().isValid()){
+const laagId = 'laag_' + layerCounter;
 
-map.fitBounds(
-uploadLayer.getBounds()
+const div = document.createElement('div');
+
+div.className='layer-item';
+
+div.innerHTML =
+'<input type="checkbox" checked id="' +
+laagId +
+'"> ' +
+naam;
+
+document
+.getElementById('layers')
+.appendChild(div);
+
+document
+.getElementById(laagId)
+.addEventListener(
+'change',
+function(){
+
+if(this.checked){
+map.addLayer(laag);
+}else{
+map.removeLayer(laag);
+}
+
+}
+);
+
+if(laag.getBounds().isValid()){
+map.fitBounds(laag.getBounds());
+}
+
+layerCounter++;
+
+}
+
+async function verwerkBestand(file){
+
+const ext =
+file.name
+.split('.')
+.pop()
+.toLowerCase();
+
+try{
+
+if(ext==='geojson' || ext==='json'){
+
+const tekst =
+await file.text();
+
+const data =
+JSON.parse(tekst);
+
+voegLaagToe(
+file.name,
+data
 );
 
 }
 
-}
+else if(ext==='zip'){
 
-document
-.getElementById('geojsonFile')
-.addEventListener('change',function(e){
-
-const file=e.target.files[0];
-
-if(!file) return;
-
-const reader=new FileReader();
-
-reader.onload=function(evt){
-
-const geojson=
-JSON.parse(evt.target.result);
-
-uploadLayer.clearLayers();
-uploadLayer.addData(geojson);
-
-zoomToLayer();
-
-};
-
-reader.readAsText(file);
-
-});
-
-document
-.getElementById('kmlFile')
-.addEventListener('change',function(e){
-
-const file=e.target.files[0];
-
-if(!file) return;
-
-const reader=new FileReader();
-
-reader.onload=function(evt){
-
-const parser =
-new DOMParser();
-
-const kml =
-parser.parseFromString(
-evt.target.result,
-'text/xml'
-);
+const buffer =
+await file.arrayBuffer();
 
 const geojson =
-toGeoJSON.kml(kml);
+await shp(buffer);
 
-uploadLayer.clearLayers();
-uploadLayer.addData(geojson);
+voegLaagToe(
+file.name,
+geojson
+);
 
-zoomToLayer();
+}
 
-};
+else{
 
-reader.readAsText(file);
+alert(
+'Ondersteund: GeoJSON en ZIP Shapefile'
+);
 
-});
+}
+
+}
+catch(error){
+
+alert(
+'Fout bij laden van bestand: ' +
+file.name
+);
+
+console.error(error);
+
+}
+
+}
 
 document
-.getElementById('shapeFile')
-.addEventListener('change',function(e){
+.getElementById('upload')
+.addEventListener(
+'change',
+async function(e){
 
-const file=e.target.files[0];
+for(const file of e.target.files){
 
-if(!file) return;
+await verwerkBestand(file);
 
-const reader=new FileReader();
+}
 
-reader.onload=function(evt){
+}
+);
 
-shp(evt.target.result)
-.then(function(geojson){
+map.on(
+'mousemove',
+function(e){
 
-uploadLayer.clearLayers();
+document.getElementById(
+'coords'
+).innerHTML =
+'Lat: ' +
+e.latlng.lat.toFixed(6) +
+'<br>Lon: ' +
+e.latlng.lng.toFixed(6);
 
-uploadLayer.addData(geojson);
-
-zoomToLayer();
-
-});
-
-};
-
-reader.readAsArrayBuffer(file);
-
-});
+}
+);
 
 </script>
 
