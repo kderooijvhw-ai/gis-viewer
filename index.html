@@ -3,304 +3,43 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
- 
+
 <title>GIS Viewer VHW</title>
- 
+
 <link rel="stylesheet"
-href="httpst/leaflet.css
- 
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 <style>
- 
 html,body{
 height:100%;
 margin:0;
-font-family:Segoe UI, Arial, sans-serif;
 }
- 
-#sidebar{
-position:absolute;
-left:0;
-top:0;
-bottom:0;
-width:320px;
-background:white;
-z-index:1000;
-overflow:auto;
-padding:15px;
-box-shadow:2px 0 8px rgba(0,0,0,0.2);
-}
- 
+
 #map{
-position:absolute;
-left:320px;
-right:0;
-top:0;
-bottom:0;
-}
- 
-h2{
-margin-top:0;
-}
- 
-.button{
-display:block;
+height:100vh;
 width:100%;
-padding:10px;
-background:#0078D4;
-color:white;
-border:none;
-border-radius:4px;
-cursor:pointer;
-margin-top:10px;
 }
- 
-.section{
-margin-top:20px;
-padding-top:15px;
-border-top:1px solid #ddd;
-}
- 
-#dropzone{
-margin-top:10px;
-padding:20px;
-border:2px dashed #999;
-text-align:center;
-border-radius:5px;
-background:#fafafa;
-}
- 
-#featureInfo{
-font-size:12px;
-}
- 
-#coords{
-font-size:12px;
-}
- 
 </style>
- 
 </head>
+
 <body>
- 
-<div id="sidebar">
- 
-<h2>GIS Viewer VHW</h2>
- 
-<input type="file"
-id="upload"
-accept=".geojson,.json,.kml">
- 
-<button class="button"
-onclick="zoomNL()">
-Zoom Nederland
-</button>
- 
-<div id="dropzone">
-Sleep GeoJSON of KML hierheen
-</div>
- 
-<div class="section">
-<h3>Coördinaten</h3>
-<div id="coords">-</div>
-</div>
- 
-<div class="section">
-<h3>Objectinformatie</h3>
-<div id="featureInfo">
-Geen object geselecteerd
-</div>
-</div>
- 
-</div>
- 
+
 <div id="map"></div>
- 
-<script srckg.com/leaflet@1.9.4/dist/leaflet.jsscript>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/6.0/togeojson.min.jsscript>
- 
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
- 
+
 const map = L.map('map').setView([52.2,5.3],8);
- 
-const osm = L.tileLayer(
-'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-{
-attribution:'© OpenStreetMap'
-}
-).addTo(map);
- 
-const esri = L.tileLayer(
+
+L.tileLayer(
 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
 {
 attribution:'Esri'
 }
-);
- 
-L.control.layers(
-{
-"OpenStreetMap":osm,
-"Luchtfoto":esri
-}
 ).addTo(map);
- 
-let importedLayer;
- 
-function addGeoJSON(data){
- 
-if(importedLayer){
-map.removeLayer(importedLayer);
-}
- 
-importedLayer = L.geoJSON(data,{
-onEachFeature:function(feature,layer){
- 
-layer.on("click",function(){
- 
-let html='';
- 
-if(feature.properties){
- 
-for(const key in feature.properties){
- 
-html +=
-"<b>"+key+"</b>: "
-+
-feature.properties[key]
-+
-"<br>";
- 
-}
- 
-}
- 
-document.getElementById(
-"featureInfo"
-).innerHTML = html;
- 
-});
- 
-}
-}).addTo(map);
- 
-map.fitBounds(
-importedLayer.getBounds()
-);
- 
-}
- 
-async function processFile(file){
- 
-const ext =
-file.name
-.split('.')
-.pop()
-.toLowerCase();
- 
-if(ext==="geojson" || ext==="json"){
- 
-const txt = await file.text();
- 
-addGeoJSON(
-JSON.parse(txt)
-);
- 
-}
- 
-if(ext==="kml"){
- 
-const txt = await file.text();
- 
-const xml =
-new DOMParser()
-.parseFromString(
-txt,
-"text/xml"
-);
- 
-const geojson =
-toGeoJSON.kml(xml);
- 
-addGeoJSON(
-geojson
-);
- 
-}
- 
-}
- 
-document
-.getElementById("upload")
-.addEventListener(
-"change",
-async function(e){
- 
-const file =
-e.target.files[0];
- 
-if(file){
-await processFile(file);
-}
- 
-}
-);
- 
-const dropzone =
-document.getElementById(
-"dropzone"
-);
- 
-dropzone.addEventListener(
-"dragover",
-function(e){
-e.preventDefault();
-}
-);
- 
-dropzone.addEventListener(
-"drop",
-async function(e){
- 
-e.preventDefault();
- 
-const file =
-e.dataTransfer.files[0];
- 
-if(file){
-await processFile(file);
-}
- 
-}
-);
- 
-map.on(
-"mousemove",
-function(e){
- 
-document.getElementById(
-"coords"
-).innerHTML =
- 
-"Latitude: "
-+
-e.latlng.lat.toFixed(6)
-+
-"<br>Longitude: "
-+
-e.latlng.lng.toFixed(6);
- 
-}
-);
- 
-function zoomNL(){
- 
-map.setView(
-[52.2,5.3],
-8
-);
- 
-}
- 
+
 </script>
- 
+
 </body>
 </html>
